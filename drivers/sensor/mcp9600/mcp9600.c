@@ -43,6 +43,11 @@ LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 
 #define MCP9600_REG_ID_REVISION 0x20
 
+/* Default hot-junction temperature measurement resolution (0.0625°C per bit) */
+#define MCP9600_HOT_JUNCT_RESOLUTION_DEFAULT	62500
+/* Default cold-junction temperature measurement resolution (0.0625°C per bit) */
+#define MCP9600_COLD_JUNCT_RESOLUTION_DEFAULT	62500
+
 struct mcp9600_data {
 	int32_t thermocouple_temp;
 	int32_t cold_junction_temp;
@@ -84,7 +89,7 @@ static int mcp9600_sample_fetch(const struct device *dev, enum sensor_channel ch
 		data->thermocouple_temp = (int32_t)(int16_t)(buf[0] << 8) | buf[1];
 
 		/* 0.0625C resolution per LSB */
-		data->thermocouple_temp *= 62500;
+		data->thermocouple_temp *= MCP9600_HOT_JUNCT_RESOLUTION_DEFAULT;
 	}
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP) {
@@ -161,7 +166,7 @@ static int mcp9600_init(const struct device *dev)
 	LOG_DBG("id: 0x%02x version: 0x%02x", buf[0], buf[1]);
 
 	/* default values at reset */
-	data->cold_junction_temp_res = 62500;
+	data->cold_junction_temp_res = MCP9600_COLD_JUNCT_RESOLUTION_DEFAULT;
 
 	return ret;
 }
