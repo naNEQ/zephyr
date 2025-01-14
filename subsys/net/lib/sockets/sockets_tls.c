@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 
+#include "app/lib/cryptolib/cryptolib.h"
+
 /* TODO: Remove all direct access to private fields.
  * According with Mbed TLS migration guide:
  *
@@ -1039,6 +1041,15 @@ static int tls_set_private_key(struct tls_context *tls,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
+	/* If the priv_key len is 0, then use the secure element */
+	if (priv_key->len == 0) {
+		tls->priv_key.pk_info = cryptolib_pk_info_from_type(MBEDTLS_PK_ECDSA);
+		return 0;
+	}
+
+	/* If we've come here, it means the private key has been provisioned from the flash
+	 * memory and we should go ahead and parse it
+	 */
 	err = mbedtls_pk_parse_key(&tls->priv_key, priv_key->buf,
 				   priv_key->len, NULL, 0,
 				   tls_ctr_drbg_random, NULL);
