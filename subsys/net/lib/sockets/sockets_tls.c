@@ -1516,6 +1516,18 @@ static int tls_check_priv_key(struct tls_credential *priv_key)
 	mbedtls_pk_context key_ctx;
 	int err;
 
+	/* If the priv_key len is 0, then the key has been provisioned from the secure element */
+	if (priv_key->len == 0) {
+		/* Throw error if no info object is returned, else return success */
+		if (cryptolib_pk_info_from_type(MBEDTLS_PK_ECDSA) == NULL) {
+			return -EINVAL;
+		}
+		return 0;
+	}
+
+	/* If we've come here, it means the private key has been provisioned from the flash
+	 * memory and we should go ahead and parse it for checking purposes.
+	 */
 	mbedtls_pk_init(&key_ctx);
 
 	err = mbedtls_pk_parse_key(&key_ctx, priv_key->buf,
